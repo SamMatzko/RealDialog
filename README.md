@@ -7,7 +7,6 @@ RealDialog is for you. It's still under development, but it aims to bring you al
 - [ ] File search
 - [ ] Browsing history
 - [ ] Keyboard path entry
-- [ ] Grid icons
 - [ ] Install from `pip`
 
 Please feel free to submit an issue if you have any more feature requests!
