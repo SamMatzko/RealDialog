@@ -8,5 +8,6 @@ RealDialog is for you. It's still under development, but it aims to bring you al
 - [ ] Browsing history
 - [ ] Keyboard path entry
 - [ ] Install from `pip`
+- [ ] Create new directories
 
 Please feel free to submit an issue if you have any more feature requests!
