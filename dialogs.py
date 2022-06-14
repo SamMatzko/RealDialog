@@ -9,13 +9,13 @@ from tkinter import ttk
 
 class _FileDialog(tkinter.Toplevel):
     """The base class for all the dialogs."""
-    
+
     def __init__(self, master, *args, **kwargs):
         super().__init__(*args, master=master, **kwargs)
-        
+
         # The file/dir that's been selected. None if nothing was selected, or if Cancel was hit.
         self.selected_file = None
-        
+
         # The user's response (Ok, Cancel)
         self.response = "placeholder"
 
@@ -25,10 +25,10 @@ class _FileDialog(tkinter.Toplevel):
         # Set the dialog to be modal
         self.wm_attributes("-topmost", True)
         self.grab_set()
-        
+
         # Set the dialog's size
         self.wm_geometry("900x700+20+20")
-        
+
         # The file and directory images
         FILE_IMAGE = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
@@ -45,27 +45,27 @@ class _FileDialog(tkinter.Toplevel):
 
         # Create all the dialog's widgets
         self.__create_widgets()
-        
+
         # Open the home directory
         self.__show_dir(os.environ["HOME"])
-    
+
     def __cancel(self, event=None):
         """Cancel the dialog."""
         self.response = False
-    
+
     def __create_buttons(self):
         """Create all the buttons for the file dialog."""
 
         # The cancel button
         self.cancel_button = ttk.Button(self, text="Cancel", underline=0, command=self.__cancel)
         self.cancel_button.grid(row=0, column=0, sticky="w")
-    
+
     def __create_widgets(self):
         """Create all the widgets for the file dialog."""
-        
+
         # All the buttons (warrant their own creation function)
         self.__create_buttons()
-        
+
         # The treeview for the files
         self.treeview = ttk.Treeview(self, columns=("size", "modified"))
         self.treeview.grid(row=1, column=0, sticky="nsew")
@@ -90,24 +90,24 @@ class _FileDialog(tkinter.Toplevel):
         # Set the rows' and columns' stretchability
         self.columnconfigure(0, weight=1)
         self.rowconfigure(1, weight=1)
-    
+
     def __on_dir_click(self, event=None):
         self.__show_dir(self.treeview.selection()[0])
-    
+
     def __on_file_click(self, event=None):
         self.selected_file = self.treeview.selection()[0]
         self.response = True
-        
+
     def __open_dir(self, directory):
         """Return two sorted lists (directories, files) of the contents of directory."""
-        
+
         # The lists
         files = []
         dirs = []
-        
+
         # Get the contents of the directory
         contents = os.listdir(directory)
-        
+
         # Sort through the contents
         for c in contents:
             if os.path.isdir(os.path.join(directory, c)):
@@ -116,19 +116,19 @@ class _FileDialog(tkinter.Toplevel):
                 files.append(os.path.join(directory, c))
         dirs.sort()
         files.sort()
-        
+
         return dirs, files
-    
+
     def __show_dir(self, directory):
         """Display the contents of directory DIRECTORY."""
-        
+
         # Delete all the old rows
         for i in self.treeview.get_children():
             self.treeview.delete(i)
-        
+
         # Get the contents of the directory
         dirs, files = self.__open_dir(directory)
-        
+
         # Display the directories
         for d in dirs:
             self.treeview.insert(
@@ -152,11 +152,11 @@ class _FileDialog(tkinter.Toplevel):
                 values=(f"{os.path.getsize(f)} bytes", f"{time.ctime(os.path.getmtime(f))}"),
                 tags=("file")
             )
-        
+
         # Configure the event-handling for the files and directories
         self.treeview.tag_bind("dir", "<Double-Button-1>", self.__on_dir_click)
         self.treeview.tag_bind("file", "<Double-Button-1>", self.__on_file_click)
-    
+
     def show(self):
         """Show the dialog, and return a tuple for the (user_response, selected_file), user
         response being True (proceed) or False (cancel)."""
