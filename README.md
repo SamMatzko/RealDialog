@@ -5,9 +5,11 @@ Attention all Linux `tkinter` coders! Ever cursed `tkinter`'s file dialog? Ever 
 RealDialog is for you. It's still under development, but it aims to bring you all the features for your `tkinter` file dialogs that Gtk and PyQt apps let you enjoy, but still with `tkinter.ttk`'s coding simplicity and theme customization. Here are the feature goals that should be reached over the next few months:
 
 - [ ] File search
+- [ ] File search suggestions
 - [ ] Browsing history
 - [ ] Keyboard path entry
 - [ ] Install from `pip`
 - [ ] Create new directories
+- [ ] Bookmarks and home directories
 
 Please feel free to submit an issue if you have any more feature requests!
