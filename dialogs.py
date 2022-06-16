@@ -10,7 +10,7 @@ from tkinter import ttk
 class _FileDialog(tkinter.Toplevel):
     """The base class for all the dialogs."""
 
-    def __init__(self, master, *args, **kwargs):
+    def __init__(self, master, action="open", *args, **kwargs):
         super().__init__(*args, master=master, **kwargs)
 
         # The file/dir that's been selected. None if nothing was selected, or if Cancel was hit.
@@ -18,16 +18,18 @@ class _FileDialog(tkinter.Toplevel):
 
         # The user's response (Ok, Cancel)
         self.response = "placeholder"
+        
+        # The action this dialog takes (either "open" or "save")
+        self.action = action
 
         # The dialog's parent window
         self.master = master
 
-        # Set the dialog to be modal
+        # Configure various aspects of the dialog
         self.wm_attributes("-topmost", True)
         self.grab_set()
-
-        # Set the dialog's size
         self.wm_geometry("900x700+20+20")
+        self.wm_protocol("WM_DELETE_WINDOW", self.__cancel)
 
         # The file and directory images
         FILE_IMAGE = os.path.join(
@@ -48,6 +50,26 @@ class _FileDialog(tkinter.Toplevel):
 
         # Open the home directory
         self.__show_dir(os.environ["HOME"])
+    
+    def __action(self):
+        """The dialog's action, either to save or to open."""
+        if self.action == "open":
+            self.__action_open()
+        else:
+            self.__action_save()
+    
+    def __action_open(self):
+        """Submit the file for opening, or just open the directory if a dir is selected."""
+        self.selected_file = self.treeview.selection()[0]
+        if os.path.isdir(self.selected_file):
+            self.__show_dir(self.selected_file)
+        else:
+            self.response = True
+    
+    def __action_save(self):
+        """Submit the file for saving, asking first if the user really wants to replace it."""
+        self.selected_file = self.treeview.selection()[0]
+        self.response = True
 
     def __cancel(self, event=None):
         """Cancel the dialog."""
@@ -56,9 +78,26 @@ class _FileDialog(tkinter.Toplevel):
     def __create_buttons(self):
         """Create all the buttons for the file dialog."""
 
+        # The frame for the top buttons
+        self.top_button_frame = ttk.Frame(self)
+        self.top_button_frame.grid(row=0, column=0, columnspan=2, sticky="ew")
+
         # The cancel button
-        self.cancel_button = ttk.Button(self, text="Cancel", underline=0, command=self.__cancel)
+        self.cancel_button = ttk.Button(self.top_button_frame, text="Cancel", underline=0, command=self.__cancel)
         self.cancel_button.grid(row=0, column=0, sticky="w")
+        
+        # The action button ("open" in some cases, "save" in others)
+        self.action_button = ttk.Button(
+            self.top_button_frame,
+            text="Open",
+            underline=0,
+            command=self.__action,
+            state="disabled"
+        )
+        self.action_button.grid(row=0, column=5, sticky="e")
+
+        # Configure the rows and columns of the frame
+        self.top_button_frame.columnconfigure(5, weight=1)
 
     def __create_widgets(self):
         """Create all the widgets for the file dialog."""
@@ -68,6 +107,7 @@ class _FileDialog(tkinter.Toplevel):
 
         # The treeview for the files
         self.treeview = ttk.Treeview(self, columns=("size", "modified"))
+        self.treeview.bind("<<TreeviewSelect>>", self.__on_select)
         self.treeview.grid(row=1, column=0, sticky="nsew")
 
         # The scrollbar for the treeview
@@ -97,6 +137,20 @@ class _FileDialog(tkinter.Toplevel):
     def __on_file_click(self, event=None):
         self.selected_file = self.treeview.selection()[0]
         self.response = True
+    
+    def __on_select(self, event=None):
+        """Handle the event for when an item in the treeview is selected."""
+        
+        # If this fails with an IndexError, it means the user double-clicked something.
+        try:
+
+            # Set the selected file variable
+            self.selected_file = self.treeview.selection()[0]
+            
+            # Enable the action button
+            self.action_button.config(state="enabled")
+        except IndexError:
+            pass
 
     def __open_dir(self, directory):
         """Return two sorted lists (directories, files) of the contents of directory."""
@@ -121,6 +175,9 @@ class _FileDialog(tkinter.Toplevel):
 
     def __show_dir(self, directory):
         """Display the contents of directory DIRECTORY."""
+
+        # Disable the action button, since nothing will be selected.
+        self.action_button.config(state="disabled")
 
         # Delete all the old rows
         for i in self.treeview.get_children():
@@ -158,8 +215,8 @@ class _FileDialog(tkinter.Toplevel):
         self.treeview.tag_bind("file", "<Double-Button-1>", self.__on_file_click)
 
     def show(self):
-        """Show the dialog, and return a tuple for the (user_response, selected_file), user
-        response being True (proceed) or False (cancel)."""
+        """Show the dialog, and return the selected file (if the user hit the action
+        button), or None (if the user hit cancel)."""
         while True:
             try:
                 self.update()
@@ -168,7 +225,10 @@ class _FileDialog(tkinter.Toplevel):
             if self.response != "placeholder":
                 self.destroy()
                 break
-        return self.response, self.selected_file
+        if self.response:
+            return self.selected_file
+        else:
+            return None
 
 if __name__ == "__main__":
     # Testing
