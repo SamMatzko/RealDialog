@@ -18,7 +18,7 @@ class _FileDialog(tkinter.Toplevel):
 
         # The user's response (Ok, Cancel)
         self.response = "placeholder"
-        
+
         # The action this dialog takes (either "open" or "save")
         self.action = action
 
@@ -50,14 +50,14 @@ class _FileDialog(tkinter.Toplevel):
 
         # Open the home directory
         self.__show_dir(os.environ["HOME"])
-    
+
     def __action(self):
         """The dialog's action, either to save or to open."""
         if self.action == "open":
             self.__action_open()
         else:
             self.__action_save()
-    
+
     def __action_open(self):
         """Submit the file for opening, or just open the directory if a dir is selected."""
         self.selected_file = self.treeview.selection()[0]
@@ -65,7 +65,7 @@ class _FileDialog(tkinter.Toplevel):
             self.__show_dir(self.selected_file)
         else:
             self.response = True
-    
+
     def __action_save(self):
         """Submit the file for saving, asking first if the user really wants to replace it."""
         self.selected_file = self.treeview.selection()[0]
@@ -75,17 +75,36 @@ class _FileDialog(tkinter.Toplevel):
         """Cancel the dialog."""
         self.response = False
 
-    def __create_buttons(self):
-        """Create all the buttons for the file dialog."""
+    def __create_widgets(self):
+        """Create all the widgets for the file dialog."""
 
         # The frame for the top buttons
         self.top_button_frame = ttk.Frame(self)
         self.top_button_frame.grid(row=0, column=0, columnspan=2, sticky="ew")
+        self.top_button_frame.columnconfigure(0, weight=0)
+        self.top_button_frame.columnconfigure(1, weight=1)
+        self.top_button_frame.columnconfigure(2, weight=0)
+        self.top_button_frame.columnconfigure(3, weight=0)
 
         # The cancel button
         self.cancel_button = ttk.Button(self.top_button_frame, text="Cancel", underline=0, command=self.__cancel)
         self.cancel_button.grid(row=0, column=0, sticky="w")
-        
+
+        # The search bar
+        self.search_bar = ttk.Frame(self.top_button_frame)
+        self.search_bar.grid(row=0, column=1, sticky="ew")
+        self.search_bar.columnconfigure(0, weight=1)
+
+        # The contents of the search bar
+        self.search_entry = ttk.Entry(self.search_bar)
+        self.search_entry.grid(row=0, column=0, sticky="ew")
+        self.search_entry.grid_remove()
+
+        # The search button, and its state variable
+        self.search_button = ttk.Button(self.top_button_frame, text="Search", command=self.__search)
+        self.search_button.grid(row=0, column=2, sticky="e")
+        self.search_shown = False
+
         # The action button ("open" in some cases, "save" in others)
         self.action_button = ttk.Button(
             self.top_button_frame,
@@ -94,16 +113,7 @@ class _FileDialog(tkinter.Toplevel):
             command=self.__action,
             state="disabled"
         )
-        self.action_button.grid(row=0, column=5, sticky="e")
-
-        # Configure the rows and columns of the frame
-        self.top_button_frame.columnconfigure(5, weight=1)
-
-    def __create_widgets(self):
-        """Create all the widgets for the file dialog."""
-
-        # All the buttons (warrant their own creation function)
-        self.__create_buttons()
+        self.action_button.grid(row=0, column=3, sticky="e")
 
         # The treeview for the files
         self.treeview = ttk.Treeview(self, columns=("size", "modified"))
@@ -137,16 +147,16 @@ class _FileDialog(tkinter.Toplevel):
     def __on_file_click(self, event=None):
         self.selected_file = self.treeview.selection()[0]
         self.response = True
-    
+
     def __on_select(self, event=None):
         """Handle the event for when an item in the treeview is selected."""
-        
+
         # If this fails with an IndexError, it means the user double-clicked something.
         try:
 
             # Set the selected file variable
             self.selected_file = self.treeview.selection()[0]
-            
+
             # Enable the action button
             self.action_button.config(state="enabled")
         except IndexError:
@@ -172,6 +182,18 @@ class _FileDialog(tkinter.Toplevel):
         files.sort()
 
         return dirs, files
+
+    def __search(self):
+        """The command for the search button, toggling the search entry."""
+
+        # Toggle whether the search bar shows or not
+        self.search_shown = not self.search_shown
+
+        # Show or hide the search bar
+        if self.search_shown:
+            self.search_entry.grid()
+        else:
+            self.search_entry.grid_remove()
 
     def __show_dir(self, directory):
         """Display the contents of directory DIRECTORY."""
