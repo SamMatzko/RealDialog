@@ -7,6 +7,8 @@ import tkinter
 
 from tkinter import ttk
 
+import widgets
+
 class _FileDialog(tkinter.Toplevel):
     """The base class for all the dialogs."""
 
@@ -96,7 +98,7 @@ class _FileDialog(tkinter.Toplevel):
         self.search_bar.columnconfigure(0, weight=1)
 
         # The contents of the search bar
-        self.search_entry = ttk.Entry(self.search_bar)
+        self.search_entry = widgets.SearchEntry(self.search_bar)
         self.search_entry.grid(row=0, column=0, sticky="ew")
         self.search_entry.grid_remove()
 
@@ -192,6 +194,7 @@ class _FileDialog(tkinter.Toplevel):
         # Show or hide the search bar
         if self.search_shown:
             self.search_entry.grid()
+            self.search_entry.focus()
         else:
             self.search_entry.grid_remove()
 
