@@ -14,7 +14,7 @@ class _FileDialog(tkinter.Toplevel):
 
     def __init__(self, master, action="open", *args, **kwargs):
         super().__init__(*args, master=master, **kwargs)
-
+        
         # The file/dir that's been selected. None if nothing was selected, or if Cancel was hit.
         self.selected_file = None
         
@@ -36,7 +36,7 @@ class _FileDialog(tkinter.Toplevel):
         self.wm_geometry("900x700+20+20")
         self.wm_protocol("WM_DELETE_WINDOW", self.__cancel)
 
-        # The file and directory images
+        # The button icons
         FILE_IMAGE = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
             "res",
@@ -52,6 +52,9 @@ class _FileDialog(tkinter.Toplevel):
 
         # Create all the dialog's widgets
         self.__create_widgets()
+        
+        # Update the current directory status
+        self.__set_current_dir(self.current_dir)
 
         # Open the home directory
         self.__show_dir(self.current_dir)
@@ -124,14 +127,18 @@ class _FileDialog(tkinter.Toplevel):
         )
         self.action_button.grid(row=0, column=3, sticky="e")
 
+        # The browsing history widget
+        self.history_frame = widgets.PathHistory(self, path=self.current_dir)
+        self.history_frame.grid(row=1, column=0, sticky="ew")
+
         # The treeview for the files
         self.treeview = ttk.Treeview(self, columns=("size", "modified"))
         self.treeview.bind("<<TreeviewSelect>>", self.__on_select)
-        self.treeview.grid(row=1, column=0, sticky="nsew")
+        self.treeview.grid(row=2, column=0, sticky="nsew")
 
         # The scrollbar for the treeview
         self.scrollbar = ttk.Scrollbar(self, command=self.treeview.yview)
-        self.scrollbar.grid(row=1, column=1, sticky="ns")
+        self.scrollbar.grid(row=2, column=1, sticky="ns")
         self.treeview.config(yscrollcommand=self.scrollbar.set)
 
         # The name column
@@ -148,10 +155,10 @@ class _FileDialog(tkinter.Toplevel):
 
         # Set the rows' and columns' stretchability
         self.columnconfigure(0, weight=1)
-        self.rowconfigure(1, weight=1)
+        self.rowconfigure(2, weight=1)
 
     def __on_dir_click(self, event=None):
-        self.current_dir = self.treeview.selection()[0]
+        self.__set_current_dir(self.treeview.selection()[0])
         self.__show_dir(self.current_dir)
 
     def __on_file_click(self, event=None):
@@ -234,6 +241,11 @@ class _FileDialog(tkinter.Toplevel):
 
         return True
 
+    def __set_current_dir(self, d):
+        """Set the current directory to D, and update all related variables/widgets."""
+        self.current_dir = d
+        self.history_frame.show_path(self.current_dir)
+
     def __show_dir(self, directory):
         """Display the contents of directory DIRECTORY."""
 
@@ -270,6 +282,9 @@ class _FileDialog(tkinter.Toplevel):
                 values=(f"{os.path.getsize(f)} bytes", f"{time.ctime(os.path.getmtime(f))}"),
                 tags=("file")
             )
+        
+        # Set the current directory
+        self.__set_current_dir(directory)
 
         # Configure the event-handling for the files and directories
         self.treeview.tag_bind("dir", "<Double-Button-1>", self.__on_dir_click)
