@@ -15,5 +15,6 @@ Here are the goals RealDialog is trying to reach over the next few months:
 - [ ] Install from `pip`
 - [ ] Create new directories
 - [ ] Bookmarks and home directories
+- [ ] Right-click menu
 
 Please feel free to submit an issue if you have any more feature requests!
