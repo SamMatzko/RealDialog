@@ -17,6 +17,9 @@ class _FileDialog(tkinter.Toplevel):
 
         # The file/dir that's been selected. None if nothing was selected, or if Cancel was hit.
         self.selected_file = None
+        
+        # The current directory we're in
+        self.current_dir = os.environ["HOME"]
 
         # The user's response (Ok, Cancel)
         self.response = "placeholder"
@@ -51,7 +54,7 @@ class _FileDialog(tkinter.Toplevel):
         self.__create_widgets()
 
         # Open the home directory
-        self.__show_dir(os.environ["HOME"])
+        self.__show_dir(self.current_dir)
 
     def __action(self):
         """The dialog's action, either to save or to open."""
@@ -98,12 +101,16 @@ class _FileDialog(tkinter.Toplevel):
         self.search_bar.columnconfigure(0, weight=1)
 
         # The contents of the search bar
-        self.search_entry = widgets.SearchEntry(self.search_bar)
+        self.search_entry = widgets.SearchEntry(
+            self.search_bar,
+            validate="key",
+            validatecommand=(self.register(self.__search), "%P")
+        )
         self.search_entry.grid(row=0, column=0, sticky="ew")
         self.search_entry.grid_remove()
 
         # The search button, and its state variable
-        self.search_button = ttk.Button(self.top_button_frame, text="Search", command=self.__search)
+        self.search_button = ttk.Button(self.top_button_frame, text="Search", command=self.__toggle_search)
         self.search_button.grid(row=0, column=2, sticky="e")
         self.search_shown = False
 
@@ -144,7 +151,8 @@ class _FileDialog(tkinter.Toplevel):
         self.rowconfigure(1, weight=1)
 
     def __on_dir_click(self, event=None):
-        self.__show_dir(self.treeview.selection()[0])
+        self.current_dir = self.treeview.selection()[0]
+        self.__show_dir(self.current_dir)
 
     def __on_file_click(self, event=None):
         self.selected_file = self.treeview.selection()[0]
@@ -185,18 +193,46 @@ class _FileDialog(tkinter.Toplevel):
 
         return dirs, files
 
-    def __search(self):
-        """The command for the search button, toggling the search entry."""
+    def __search(self, text):
+        """Start the search for the entry's content."""
 
-        # Toggle whether the search bar shows or not
-        self.search_shown = not self.search_shown
+        # Clear the treeview
+        for i in self.treeview.get_children():
+            self.treeview.delete(i)
 
-        # Show or hide the search bar
-        if self.search_shown:
-            self.search_entry.grid()
-            self.search_entry.focus()
-        else:
-            self.search_entry.grid_remove()
+        # Only do this if the entry is not empty
+        if text:
+
+            # Get all the files resulting from the glob, and the current directory
+            search_string = f"{self.current_dir}{os.path.sep}**{text}**"
+            print(search_string)
+            files = glob.glob(search_string)
+
+            # Add all the files to the treeview
+            if files:
+                for f in files:
+                    if os.path.isdir(f):
+                        self.treeview.insert(
+                            "",
+                            "end",
+                            f + os.path.sep,
+                            text=os.path.basename(f),
+                            image=self.dir_image,
+                            values=(f"{len(os.listdir(f))} item(s)", f"{time.ctime(os.path.getmtime(f))}"),
+                            tags=("dir")
+                        )
+                    else:
+                        self.treeview.insert(
+                        "",
+                        "end",
+                        f,
+                        text=os.path.basename(f),
+                        image=self.file_image,
+                        values=(f"{os.path.getsize(f)} bytes", f"{time.ctime(os.path.getmtime(f))}"),
+                        tags=("file")
+                    )
+
+        return True
 
     def __show_dir(self, directory):
         """Display the contents of directory DIRECTORY."""
@@ -238,6 +274,22 @@ class _FileDialog(tkinter.Toplevel):
         # Configure the event-handling for the files and directories
         self.treeview.tag_bind("dir", "<Double-Button-1>", self.__on_dir_click)
         self.treeview.tag_bind("file", "<Double-Button-1>", self.__on_file_click)
+
+    def __toggle_search(self):
+        """The command for the search button, toggling the search entry."""
+
+        # Toggle whether the search bar shows or not
+        self.search_shown = not self.search_shown
+
+        # Show or hide the search bar
+        if self.search_shown:
+            self.search_entry.grid()
+            self.search_entry.focus()
+        else:
+            self.search_entry.grid_remove()
+            
+            # Show the directory again, instead of the search results
+            self.__show_dir(self.current_dir)
 
     def show(self):
         """Show the dialog, and return the selected file (if the user hit the action

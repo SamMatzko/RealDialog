@@ -8,7 +8,7 @@ RealDialog is for you. It's still under development, but it aims to bring you al
 
 Here are the goals RealDialog is trying to reach over the next few months:
 
-- [ ] File search
+- [X] File search
 - [ ] File search suggestions
 - [ ] Browsing history
 - [ ] Keyboard path entry
