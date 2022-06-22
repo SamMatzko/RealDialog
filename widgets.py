@@ -41,12 +41,18 @@ class PathHistory(ttk.Frame):
         # Reset the list of buttons
         self.buttons = []
 
-        # Add all the new buttons
+        # Create the list of path elements we're going to show, limited to six elements
+        elements = []
         for element in path.split("/"):
             if element != "":
-                button = ttk.Button(self.buttons_frame, text=element)
-                button.pack(side="left")
-                self.buttons.append(button)
+                elements.append(element)
+        elements = elements[-6:]
+
+        # Show the buttons
+        for element in elements:
+            button = ttk.Button(self.buttons_frame, text=element)
+            button.pack(side="left")
+            self.buttons.append(button)
         
         # Set our path variable
         self.path = path
